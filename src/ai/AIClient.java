@@ -6,6 +6,7 @@ import java.net.*;
 import javax.swing.*;
 import java.awt.*;
 import kalaha.*;
+import ai.MinimaxTree;
 
 /**
  * This is the main class for your Kalaha AI bot. Currently
@@ -24,7 +25,7 @@ public class AIClient implements Runnable
     private Socket socket;
     private boolean running;
     private boolean connected;
-    	
+
     /**
      * Creates a new client.
      */
@@ -201,23 +202,64 @@ public class AIClient implements Runnable
             addText("Error closing connection: " + ex.getMessage());
         }
     }
-    
+
     /**
      * This is the method that makes a move each time it is your turn.
      * Here you need to change the call to the random method to your
      * Minimax search.
-     * 
+     *
      * @param currentBoard The current board state
      * @return Move to make (1-6)
      */
     public int getMove(GameState currentBoard)
     {
 
-        currentBoard.
+        MinimaxTree tree = new MinimaxTree();
+
+        DepthFirstStop(tree.getRoot(), 2, currentBoard);
+
+        // Six different possible moves
+
         int myMove = getRandom();
         return myMove;
     }
-    
+
+    private void DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard) {
+
+        TreeNode lastNode = null;
+        for (int ambo = 1; ambo <= 6; ambo++) {
+
+            GameState newBoard = currentBoard.clone();
+            int otherPlayer = (player == 1) ? 2 : 1;
+            int score = Integer.MAX_VALUE;
+            if (newBoard.moveIsPossible(ambo)); {
+                newBoard.makeMove(ambo);
+                score = newBoard.getScore(player) - newBoard.getScore(otherPlayer);
+            }
+
+            if (ambo == 1) {
+                parent.setFirstChild(new TreeNode(score, null, null));
+                lastNode = parent.getFirstChild();
+            } else {
+                lastNode.setNextSibling(new TreeNode(score, null, null));
+                lastNode = lastNode.getNextSibling();
+            }
+
+//            children[ambo - 1] = lastNode;
+
+            if (levelsRemaining > 1) {
+                DepthFirstStop(lastNode, levelsRemaining - 1, newBoard);
+            }
+
+        }
+
+//        GameState newState = currentBoard.clone();
+//        newState.makeMove(something);
+//        DepthFirstStop(null, levelsRemaining-1);
+
+//        return children;
+    }
+
     /**
      * Returns a random ambo number (1-6) used when making
      * a random move.
