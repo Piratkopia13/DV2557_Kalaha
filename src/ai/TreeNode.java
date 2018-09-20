@@ -1,10 +1,10 @@
 package ai;
 
 public class TreeNode {
-    public TreeNode(int score, TreeNode firstChild, TreeNode nextSibling) {
+    public TreeNode(int score) {
         this.score = score;
-        this.firstChild = firstChild;
-        this.nextSibling = nextSibling;
+        this.firstChild = null;
+        this.nextSibling = null;
     }
 
     public TreeNode getFirstChild() {
@@ -35,18 +35,4 @@ public class TreeNode {
 
     private int score;
 
-    public void setChildren(TreeNode[] children) {
-        TreeNode lastNode = null;
-        for (int i = 0; i < 6; i++) {
-
-            if (i == 0) {
-                setFirstChild(children[i]);
-                lastNode = getFirstChild();
-            } else {
-                lastNode.setNextSibling(children[i]);
-                lastNode = lastNode.getNextSibling();
-            }
-
-        }
-    }
 }

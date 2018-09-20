@@ -108,6 +108,9 @@ public class AIClient implements Runnable
     {
         String reply;
         running = true;
+
+        double totalTime = 0;
+        int numberOfPlays = 0;
         
         try
         {
@@ -178,6 +181,9 @@ public class AIClient implements Runnable
                             {
                                 validMove = true;
                                 addText("Made move " + cMove + " in " + e + " secs");
+                                totalTime += e;
+                                numberOfPlays++;
+                                addText("Current avg " + totalTime / numberOfPlays + " secs");
                             }
                         }
                     }
@@ -218,46 +224,69 @@ public class AIClient implements Runnable
 
         DepthFirstStop(tree.getRoot(), 2, currentBoard);
 
-        // Six different possible moves
+        int maxScore = Integer.MIN_VALUE;
+        int bestAmbo = -1;
+        TreeNode child = tree.getRoot().getFirstChild();
+        for (int ambo = 1; ambo <= 6; ambo++) {
+            int childScore = child.getScore();
+            if (childScore > maxScore) {
+                maxScore = childScore;
+                bestAmbo = ambo;
+            }
+            child = child.getNextSibling();
+        }
 
-        int myMove = getRandom();
-        return myMove;
+        // Six BEST possible move!
+        return bestAmbo;
     }
 
-    private void DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard) {
+    private int DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard) {
+
+        int minOrMax = Integer.MIN_VALUE;
+        boolean minimize = true;
+        if (currentBoard.getNextPlayer() == player) {
+            minOrMax = Integer.MAX_VALUE;
+            minimize = false;
+        }
 
         TreeNode lastNode = null;
         for (int ambo = 1; ambo <= 6; ambo++) {
 
             GameState newBoard = currentBoard.clone();
             int otherPlayer = (player == 1) ? 2 : 1;
-            int score = Integer.MAX_VALUE;
-            if (newBoard.moveIsPossible(ambo)); {
+            int score = (minimize) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+            boolean movePossible = newBoard.moveIsPossible(ambo);
+            if (movePossible) {
                 newBoard.makeMove(ambo);
                 score = newBoard.getScore(player) - newBoard.getScore(otherPlayer);
             }
 
             if (ambo == 1) {
-                parent.setFirstChild(new TreeNode(score, null, null));
+                parent.setFirstChild(new TreeNode(score));
                 lastNode = parent.getFirstChild();
             } else {
-                lastNode.setNextSibling(new TreeNode(score, null, null));
+                lastNode.setNextSibling(new TreeNode(score));
                 lastNode = lastNode.getNextSibling();
             }
 
-//            children[ambo - 1] = lastNode;
+            if (movePossible && levelsRemaining > 1) {
+                score = DepthFirstStop(lastNode, levelsRemaining - 1, newBoard);
+            }
 
-            if (levelsRemaining > 1) {
-                DepthFirstStop(lastNode, levelsRemaining - 1, newBoard);
+            if (minimize) {
+                if (score < minOrMax) {
+                    minOrMax = score;
+                }
+            } else {
+                if (score > minOrMax) {
+                    minOrMax = score;
+                }
             }
 
         }
 
-//        GameState newState = currentBoard.clone();
-//        newState.makeMove(something);
-//        DepthFirstStop(null, levelsRemaining-1);
+        return minOrMax;
 
-//        return children;
     }
 
     /**

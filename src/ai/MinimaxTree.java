@@ -3,7 +3,7 @@ package ai;
 public class MinimaxTree {
 
     public MinimaxTree() {
-        this.root = new TreeNode(0, null, null);
+        this.root = new TreeNode(0);
     }
 
     public TreeNode getRoot() {
