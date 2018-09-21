@@ -217,16 +217,18 @@ public class AIClient implements Runnable
      * @param currentBoard The current board state
      * @return Move to make (1-6)
      */
+    // Grade E
     public int getMove(GameState currentBoard)
     {
 
         MinimaxTree tree = new MinimaxTree();
-
-        DepthFirstStop(tree.getRoot(), 2, currentBoard);
+        int stopDepth = 7;
+        DepthFirstStop(tree.getRoot(), stopDepth, currentBoard);
 
         int maxScore = Integer.MIN_VALUE;
         int bestAmbo = -1;
         TreeNode child = tree.getRoot().getFirstChild();
+        // Check all valid moves for the best utility value
         for (int ambo = 1; ambo <= 6; ambo++) {
             int childScore = child.getScore();
             if (childScore > maxScore) {
@@ -236,31 +238,37 @@ public class AIClient implements Runnable
             child = child.getNextSibling();
         }
 
-        // Six BEST possible move!
+        // The currently BEST possible move! (given an optimal opponent)
         return bestAmbo;
     }
 
     private int DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard) {
 
-        int minOrMax = Integer.MIN_VALUE;
+        // Check if MIN or MAX
+        int minOrMax = Integer.MAX_VALUE;
         boolean minimize = true;
         if (currentBoard.getNextPlayer() == player) {
-            minOrMax = Integer.MAX_VALUE;
+            minOrMax = Integer.MIN_VALUE;
             minimize = false;
         }
 
         TreeNode lastNode = null;
+        // Check all 6 nodes of the parent (maximum of 6 different moves per play)
         for (int ambo = 1; ambo <= 6; ambo++) {
 
+            // Clone the board so not to change the current gamestate
             GameState newBoard = currentBoard.clone();
             int otherPlayer = (player == 1) ? 2 : 1;
             int score = (minimize) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+            // Make move if it is possible
             boolean movePossible = newBoard.moveIsPossible(ambo);
             if (movePossible) {
                 newBoard.makeMove(ambo);
                 score = newBoard.getScore(player) - newBoard.getScore(otherPlayer);
             }
 
+            // Create the current node
             if (ambo == 1) {
                 parent.setFirstChild(new TreeNode(score));
                 lastNode = parent.getFirstChild();
@@ -269,10 +277,14 @@ public class AIClient implements Runnable
                 lastNode = lastNode.getNextSibling();
             }
 
-            if (movePossible && levelsRemaining > 1) {
+            // Recurse if possible
+            if (movePossible && levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
                 score = DepthFirstStop(lastNode, levelsRemaining - 1, newBoard);
+                // Recursion rewind utility score update
+                lastNode.setScore(score);
             }
 
+            // Assign the utility value depending on if it's MIN's or MAX's turn
             if (minimize) {
                 if (score < minOrMax) {
                     minOrMax = score;
