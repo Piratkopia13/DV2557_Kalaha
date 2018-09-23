@@ -1,10 +1,13 @@
 package ai;
 
 public class TreeNode {
-    public TreeNode(int score) {
-        this.score = score;
+    private int ambo;
+
+    public TreeNode(int ambo) {
+        this.score = 1337;
         this.firstChild = null;
         this.nextSibling = null;
+        this.ambo = ambo;
     }
 
     public TreeNode getFirstChild() {
@@ -35,4 +38,11 @@ public class TreeNode {
 
     private int score;
 
+    public int getAmbo() {
+        return ambo;
+    }
+
+    public void setAmbo(int ambo) {
+        this.ambo = ambo;
+    }
 }

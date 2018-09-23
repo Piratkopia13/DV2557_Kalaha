@@ -195,6 +195,7 @@ public class AIClient implements Runnable
 	}
         catch (Exception ex)
         {
+            ex.printStackTrace();
             running = false;
         }
         
@@ -221,17 +222,17 @@ public class AIClient implements Runnable
 
         /*MinimaxTree tree = new MinimaxTree();
         int stopDepth = 7;
-        DepthFirstStop(tree.getRoot(), stopDepth, currentBoard);
+        DepthFirstStop(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE);
 
         int maxScore = Integer.MIN_VALUE;
         int bestAmbo = -1;
         TreeNode child = tree.getRoot().getFirstChild();
         // Check all valid moves for the best utility value
-        for (int ambo = 1; ambo <= 6; ambo++) {
+        while (child != null) {
             int childScore = child.getScore();
             if (childScore > maxScore) {
                 maxScore = childScore;
-                bestAmbo = ambo;
+                bestAmbo = child.getAmbo();
             }
             child = child.getNextSibling();
         }
@@ -266,22 +267,22 @@ public class AIClient implements Runnable
             if (movePossible) {
                 newBoard.makeMove(ambo);
                 score = newBoard.getScore(player) - newBoard.getScore(otherPlayer);
-            }
 
-            // Create the current node
-            if (ambo == 1) {
-                parent.setFirstChild(new TreeNode(score));
-                lastNode = parent.getFirstChild();
-            } else {
-                lastNode.setNextSibling(new TreeNode(score));
-                lastNode = lastNode.getNextSibling();
-            }
+                // Create the current node
+                if (parent.getFirstChild() == null) {
+                    parent.setFirstChild(new TreeNode(ambo));
+                    lastNode = parent.getFirstChild();
+                } else {
+                    lastNode.setNextSibling(new TreeNode(ambo));
+                    lastNode = lastNode.getNextSibling();
+                }
 
-            // Recurse if possible
-            if (movePossible && levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
-                score = DepthFirstStop(lastNode, levelsRemaining - 1, newBoard, endTime);
-                // Recursion rewind utility score update
-                lastNode.setScore(score);
+                // Recurse if possible
+                if (movePossible && levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
+                    score = DepthFirstStop(lastNode, levelsRemaining - 1, newBoard, endTime);
+                    // Recursion rewind utility score update
+                    lastNode.setScore(score);
+                }
             }
 
             // Assign the utility value depending on if it's MIN's or MAX's turn
@@ -315,11 +316,11 @@ public class AIClient implements Runnable
 
             TreeNode child = tree.getRoot().getFirstChild();
             // Check all valid moves for the best utility value
-            for (int ambo = 1; ambo <= 6; ambo++) {
+            while (child != null) {
                 int childScore = child.getScore();
                 if (childScore > maxScore) {
                     maxScore = childScore;
-                    bestAmbo = ambo;
+                    bestAmbo = child.getAmbo();
                 }
                 child = child.getNextSibling();
             }
