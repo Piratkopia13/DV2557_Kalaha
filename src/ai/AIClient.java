@@ -2,6 +2,7 @@ package ai;
 
 import ai.Global;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import javax.swing.*;
 import java.awt.*;
@@ -220,9 +221,9 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard) {
 
-        /*MinimaxTree tree = new MinimaxTree();
+        MinimaxTree tree = new MinimaxTree();
         int stopDepth = 7;
-        DepthFirstStop(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE);
+        DepthFirstStopAlphaBetaPruning(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         int maxScore = Integer.MIN_VALUE;
         int bestAmbo = -1;
@@ -238,9 +239,9 @@ public class AIClient implements Runnable
         }
 
         // The currently BEST possible move! (given an optimal opponent)
-        return bestAmbo;*/
+        return bestAmbo;
 
-        return iterativeDeepening(5000, currentBoard);
+        //return iterativeDeepening(5000, currentBoard);
     }
 
     private int DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard, long endTime) {
@@ -295,6 +296,66 @@ public class AIClient implements Runnable
                     minOrMax = score;
                 }
             }
+
+        }
+
+        return minOrMax;
+
+    }
+
+    private int DepthFirstStopAlphaBetaPruning(TreeNode parent, int levelsRemaining, GameState currentBoard, long endTime, int alpha, int beta) {
+
+        // Check if MIN or MAX
+        int minOrMax = Integer.MAX_VALUE;
+        boolean minimize = true;
+        if (currentBoard.getNextPlayer() == player) {
+            minOrMax = Integer.MIN_VALUE;
+            minimize = false;
+        }
+
+        TreeNode lastNode = null;
+        // Check all 6 nodes of the parent (maximum of 6 different moves per play)
+        for (int ambo = 1; ambo <= 6; ambo++) {
+
+            // Clone the board so not to change the current gamestate
+            GameState newBoard = currentBoard.clone();
+            int otherPlayer = (player == 1) ? 2 : 1;
+            int score = (minimize) ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+
+            // Make move if it is possible and within the time limit
+            boolean movePossible = newBoard.moveIsPossible(ambo) && System.currentTimeMillis() < endTime;
+            if (movePossible) {
+                newBoard.makeMove(ambo);
+                score = newBoard.getScore(player) - newBoard.getScore(otherPlayer);
+
+                // Create the current node
+                if (parent.getFirstChild() == null) {
+                    parent.setFirstChild(new TreeNode(ambo));
+                    lastNode = parent.getFirstChild();
+                } else {
+                    lastNode.setNextSibling(new TreeNode(ambo));
+                    lastNode = lastNode.getNextSibling();
+                }
+
+                // Recurse if possible
+                if (movePossible && levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
+                    score = DepthFirstStopAlphaBetaPruning(lastNode, levelsRemaining - 1, newBoard, endTime, alpha, beta);
+                    // Recursion rewind utility score update
+                    lastNode.setScore(score);
+                }
+            }
+
+            // Assign the utility value depending on if it's MIN's or MAX's turn
+            if (minimize) {
+                minOrMax = Math.min(minOrMax, score);
+                beta = Math.min(beta, minOrMax);
+            } else {
+                minOrMax = Math.max(minOrMax, score);
+                alpha = Math.max(alpha, minOrMax);
+            }
+            // Alpha beta pruning
+            if (beta <= alpha)
+                break;
 
         }
 
