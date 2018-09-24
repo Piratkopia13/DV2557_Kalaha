@@ -221,8 +221,8 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard) {
 
-        MinimaxTree tree = new MinimaxTree();
-        int stopDepth = 7;
+        /*MinimaxTree tree = new MinimaxTree();
+        int stopDepth = 12;
         DepthFirstStopAlphaBetaPruning(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         int maxScore = Integer.MIN_VALUE;
@@ -239,9 +239,9 @@ public class AIClient implements Runnable
         }
 
         // The currently BEST possible move! (given an optimal opponent)
-        return bestAmbo;
+        return bestAmbo;*/
 
-        //return iterativeDeepening(5000, currentBoard);
+        return iterativeDeepeningWithAlphaBetaPruning(5000, currentBoard);
     }
 
     private int DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard, long endTime) {
@@ -363,7 +363,7 @@ public class AIClient implements Runnable
 
     }
 
-    private int iterativeDeepening(long milliSeconds, GameState currentBoard) {
+    private int iterativeDeepeningWithAlphaBetaPruning(long milliSeconds, GameState currentBoard) {
 
         long endTime = System.currentTimeMillis() + milliSeconds - 10;
 
@@ -373,7 +373,9 @@ public class AIClient implements Runnable
 
         while (System.currentTimeMillis() < endTime) {
             MinimaxTree tree = new MinimaxTree();
-            DepthFirstStop(tree.getRoot(), stopDepth, currentBoard, endTime);
+            DepthFirstStopAlphaBetaPruning(tree.getRoot(), stopDepth, currentBoard, endTime, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            //DepthFirstStop(tree.getRoot(), stopDepth, currentBoard, endTime);
+
 
             TreeNode child = tree.getRoot().getFirstChild();
             // Check all valid moves for the best utility value
