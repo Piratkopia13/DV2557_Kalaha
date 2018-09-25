@@ -496,4 +496,9 @@ public class GameState
 
 	return str;
     }
+
+    public int getHash() {
+        return board.hashCode();
+    }
+
 }

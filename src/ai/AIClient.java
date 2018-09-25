@@ -220,8 +220,17 @@ public class AIClient implements Runnable
      * @return Move to make (1-6)
      */
     public int getMove(GameState currentBoard) {
+        addText(String.valueOf(currentBoard.getHash()));
+        return getMoveWithID(5000, currentBoard);
+        //return getMoveWithDF(currentBoard);
+    }
 
-        /*MinimaxTree tree = new MinimaxTree();
+    public int getMoveWithID(long milliSeconds, GameState currentBoard) {
+        return iterativeDeepeningWithAlphaBetaPruning(5000, currentBoard);
+    }
+
+    public int getMoveWithDF(GameState currentBoard) {
+        MinimaxTree tree = new MinimaxTree();
         int stopDepth = 12;
         DepthFirstStopAlphaBetaPruning(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
@@ -239,9 +248,7 @@ public class AIClient implements Runnable
         }
 
         // The currently BEST possible move! (given an optimal opponent)
-        return bestAmbo;*/
-
-        return iterativeDeepeningWithAlphaBetaPruning(5000, currentBoard);
+        return bestAmbo;
     }
 
     private int DepthFirstStop(TreeNode parent, int levelsRemaining, GameState currentBoard, long endTime) {
@@ -279,7 +286,7 @@ public class AIClient implements Runnable
                 }
 
                 // Recurse if possible
-                if (movePossible && levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
+                if (levelsRemaining > 1 && newBoard.getNoValidMoves(player) != 0) {
                     score = DepthFirstStop(lastNode, levelsRemaining - 1, newBoard, endTime);
                     // Recursion rewind utility score update
                     lastNode.setScore(score);
