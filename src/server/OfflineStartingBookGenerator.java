@@ -1,9 +1,10 @@
 package server;
 
-import ai.AIClient;
-import ai.OpeningBook;
+import ai.*;
 import client.BadClient;
+import client.BadClientNoGUI;
 import client.RandomClient;
+import jdk.nashorn.api.tree.Tree;
 import kalaha.Commands;
 import kalaha.Errors;
 import kalaha.GameState;
@@ -108,27 +109,194 @@ public class OfflineStartingBookGenerator implements Runnable {
                 bestSecondMove = Math.max(bestSecondMove, bestFourthMove);
             }
         }
-        // game.makeMove()
-
-        for (int it = 0; it < 2; it++) {
 
 
+        // AI is player 1
 
-            AIClient aiClient = new AIClient();
-            aiClient.start();
+        long startTime = System.currentTimeMillis();
 
-            RandomClient badClient = new RandomClient();
-            badClient.start();
+        MinimaxTree tree = new MinimaxTree();
 
-            while (game.getWinner() == -1) {
-                Thread.sleep(100);
+        for (int firstMove = 1; firstMove <= 1; firstMove++) {
+            GameState initialGame = new GameState();
+
+            if(firstMove < 6) {
+                initialGame.makeMove(1);
+                initialGame.makeMove(firstMove + 1);
+            } else {
+                initialGame.makeMove(firstMove - 4);
             }
 
-            System.out.println("Iteration " + it + ": player " + game.getWinner() + " won, scores " + game.getScore(1) + " - " + game.getScore(2));
-
-            game = new GameState();
+            buildAiFirstTree(tree.getRoot(), initialGame, true);
 
         }
+
+        System.out.println("Tree built in " + (System.currentTimeMillis() - startTime) + "ms");
+        System.out.println("dun");
+
+
+//        TreeNode lastNode = tree.getRoot();
+//
+//        int startMoveScore = Integer.MIN_VALUE;
+//
+//        for (int firstMove = 1; firstMove <= 10; firstMove++) {
+//            int bestSecondScore = Integer.MIN_VALUE;
+//            int bestSecondAmbo = -1;
+//
+//            if (firstMove == 1) {
+//                lastNode.setFirstChild(new TreeNode(firstMove));
+//                lastNode = lastNode.getFirstChild();
+//            } else {
+//                lastNode.setNextSibling(new TreeNode(firstMove));
+//                lastNode = lastNode.getNextSibling();
+//            }
+//
+//
+//            for (int secondMove = 1; secondMove <= 6; secondMove++) {
+//
+//                int bestScore = Integer.MIN_VALUE;
+//                int bestAmbo = -1;
+//                int hashAfterOpponentsFirstMove = 0;
+//
+//                TreeNode
+//
+//                if (secondMove == 1) {
+//                    lastNode.setFirstChild(new TreeNode(secondMove));
+//                    lastNode = lastNode.getFirstChild();
+//                } else {
+//                    lastNode.setNextSibling(new TreeNode(secondMove));
+//                    lastNode = lastNode.getNextSibling();
+//                }
+//
+//                for (int thirdMove = 1; thirdMove <= 6; thirdMove++) {
+//
+//                    if(firstMove < 6) {
+//                        game.makeMove(1);
+//                        game.makeMove(firstMove + 1);
+//                    } else {
+//                        game.makeMove(firstMove - 4);
+//                    }
+//
+//
+//
+//                    game.makeMove(secondMove);
+//                    // Store hash for second move
+//                    if (thirdMove == 1)
+//                        hashAfterOpponentsFirstMove = game.getHash();
+//
+//
+//                    game.makeMove(thirdMove);
+//
+//
+//                    finishGame();
+//
+//                    int newScore = game.getScore(1);
+//                    if (bestScore < newScore) {
+//                        bestScore = newScore;
+//                        bestAmbo = thirdMove;
+//                    }
+//
+//                    game = new GameState();
+//
+//                }
+//
+//                if (bestSecondScore < bestScore) {
+//                    bestSecondScore = bestScore;
+//                    bestSecondAmbo = bestAmbo;
+//                }
+//
+//            }
+//
+//
+//
+//            startMoveScore = Math.max(startMoveScore, bestSecondScore);
+//
+//        }
+
+
+        // game.makeMove()
+
+//        for (int it = 0; it < 2; it++) {
+//
+//
+//
+//            AIClient aiClient = new AIClient();
+//            aiClient.start();
+//
+//            RandomClient badClient = new RandomClient();
+//            badClient.start();
+//
+//            while (game.getWinner() == -1) {
+//                Thread.sleep(100);
+//            }
+//
+//            System.out.println("Iteration " + it + ": player " + game.getWinner() + " won, scores " + game.getScore(1) + " - " + game.getScore(2));
+//
+//            game = new GameState();
+//
+//        }
+
+    }
+
+
+    private void buildAiFirstTree(TreeNode parent, GameState gameState, boolean isOpponentsTurn) {
+
+        TreeNode currentNode = null;
+
+        for (int move = 1; move <= 6; move++) {
+            GameState newState = gameState.clone();
+
+            if (move == 1) {
+                parent.setFirstChild(new TreeNode(-1));
+                currentNode = parent.getFirstChild();
+            } else {
+                currentNode.setNextSibling(new TreeNode(-1));
+                currentNode = currentNode.getNextSibling();
+            }
+
+            newState.makeMove(move);
+
+            if (isOpponentsTurn) {
+                currentNode.setScore(newState.getHash());
+                buildAiFirstTree(currentNode, newState, false);
+            } else {
+
+                game = newState;
+
+                try {
+                    finishGame();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                int score = game.getScore(1);
+
+                currentNode.setScore(score);
+                currentNode.setAmbo(move);
+
+
+            }
+
+
+        }
+
+    }
+
+
+    private void finishGame() throws InterruptedException {
+        AIClientNoGUI aiClient = new AIClientNoGUI();
+        aiClient.start();
+
+        BadClientNoGUI badClient = new BadClientNoGUI();
+        badClient.start();
+
+        while (game.getWinner() == -1) {
+            Thread.sleep(5);
+        }
+
+        System.out.println("One game finished");
+
+//        System.out.println("Iteration " + it + ": player " + game.getWinner() + " won, scores " + game.getScore(1) + " - " + game.getScore(2));
 
     }
 
@@ -190,10 +358,14 @@ public class OfflineStartingBookGenerator implements Runnable {
                 Socket mSocket = ssocket.accept();
                 if (nextClient == 0)
                 {
+                    if (clients[0] != null)
+                        clients[0].stop();
                     clients[0] = new OfflineStartingBookGenerator.ClientThread(mSocket, 1);
                 }
                 else if (nextClient == 1)
                 {
+                    if (clients[1] != null)
+                        clients[1].stop();
                     clients[1] = new OfflineStartingBookGenerator.ClientThread(mSocket, 2);
                 }
                 else
@@ -403,7 +575,7 @@ public class OfflineStartingBookGenerator implements Runnable {
 
             //Make the move!
             game.makeMove(ambo);
-            g.addText("Move " + ambo + " by Player " + player);
+            //g.addText("Move " + ambo + " by Player " + player);
             g.updateBoard(game);
 
             if(game.gameEnded())

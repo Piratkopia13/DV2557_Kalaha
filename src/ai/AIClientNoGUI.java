@@ -1,13 +1,16 @@
 package ai;
 
-import ai.Global;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.net.*;
+import kalaha.Commands;
+import kalaha.Errors;
+import kalaha.GameState;
+import kalaha.KalahaMain;
+
 import javax.swing.*;
 import java.awt.*;
-import kalaha.*;
-import ai.MinimaxTree;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 /**
  * This is the main class for your Kalaha AI bot. Currently
@@ -15,11 +18,10 @@ import ai.MinimaxTree;
  * 
  * @author Johan Hagelbäck
  */
-public class AIClient implements Runnable
+public class AIClientNoGUI implements Runnable
 {
     private int player;
-    private JTextArea text;
-    
+
     private PrintWriter out;
     private BufferedReader in;
     private Thread thr;
@@ -30,27 +32,23 @@ public class AIClient implements Runnable
     /**
      * Creates a new client.
      */
-    public AIClient()
+    public AIClientNoGUI()
     {
 	player = -1;
         connected = false;
         
         //This is some necessary client stuff. You don't need
         //to change anything here.
-        initGUI();
-	
+
         try
         {
-            addText("Connecting to localhost:" + KalahaMain.port);
             socket = new Socket("localhost", KalahaMain.port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            addText("Done");
             connected = true;
         }
         catch (Exception ex)
         {
-            addText("Unable to connect to server");
             return;
         }
     }
@@ -67,40 +65,7 @@ public class AIClient implements Runnable
             thr.start();
         }
     }
-    
-    /**
-     * Creates the GUI.
-     */
-    private void initGUI()
-    {
-        //Client GUI stuff. You don't need to change this.
-        JFrame frame = new JFrame("My AI Client");
-        frame.setLocation(Global.getClientXpos(), 445);
-        frame.setSize(new Dimension(420,250));
-        frame.getContentPane().setLayout(new FlowLayout());
-        
-        text = new JTextArea();
-        JScrollPane pane = new JScrollPane(text);
-        pane.setPreferredSize(new Dimension(400, 210));
-        
-        frame.getContentPane().add(pane);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
-        frame.setVisible(true);
-    }
-    
-    /**
-     * Adds a text string to the GUI textarea.
-     * 
-     * @param txt The text to add
-     */
-    public void addText(String txt)
-    {
-        //Don't change this
-        text.append(txt + "\n");
-        text.setCaretPosition(text.getDocument().getLength());
-    }
-    
+
     /**
      * Thread for server communication. Checks when it is this
      * client's turn to make a move.
@@ -126,7 +91,6 @@ public class AIClient implements Runnable
                     String tokens[] = reply.split(" ");
                     player = Integer.parseInt(tokens[1]);
                     
-                    addText("I am player " + player);
                 }
                 
                 //Check if game has ended. No need to change this.
@@ -134,20 +98,10 @@ public class AIClient implements Runnable
                 reply = in.readLine();
                 if(reply.equals("1") || reply.equals("2") )
                 {
-                    int w = Integer.parseInt(reply);
-                    if (w == player)
-                    {
-                        addText("I won!");
-                    }
-                    else
-                    {
-                        addText("I lost...");
-                    }
                     running = false;
                 }
                 if(reply.equals("0"))
                 {
-                    addText("Even game!");
                     running = false;
                 }
 
@@ -181,33 +135,30 @@ public class AIClient implements Runnable
                             if (!reply.startsWith("ERROR"))
                             {
                                 validMove = true;
-                                addText("Made move " + cMove + " in " + e + " secs");
                                 totalTime += e;
                                 numberOfPlays++;
-                                addText("Current avg " + totalTime / numberOfPlays + " secs");
                             }
                         }
                     }
                 }
                 
                 //Wait
-                Thread.sleep(100);
+                // Thread.sleep(100);
             }
 	}
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            //ex.printStackTrace();
             running = false;
         }
         
         try
         {
             socket.close();
-            addText("Disconnected from server");
         }
         catch (Exception ex)
         {
-            addText("Error closing connection: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
