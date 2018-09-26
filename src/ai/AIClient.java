@@ -221,17 +221,16 @@ public class AIClient implements Runnable
      */
     public int getMove(GameState currentBoard) {
         addText(String.valueOf(currentBoard.getHash()));
-        return getMoveWithID(5000, currentBoard);
-        //return getMoveWithDF(currentBoard);
+        // return getMoveWithID(5000, currentBoard);
+        return getMoveWithDF(12, currentBoard);
     }
 
     public int getMoveWithID(long milliSeconds, GameState currentBoard) {
-        return iterativeDeepeningWithAlphaBetaPruning(5000, currentBoard);
+        return iterativeDeepeningWithAlphaBetaPruning(milliSeconds, currentBoard);
     }
 
-    public int getMoveWithDF(GameState currentBoard) {
+    public int getMoveWithDF(int stopDepth, GameState currentBoard) {
         MinimaxTree tree = new MinimaxTree();
-        int stopDepth = 12;
         DepthFirstStopAlphaBetaPruning(tree.getRoot(), stopDepth, currentBoard, Long.MAX_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE);
 
         int maxScore = Integer.MIN_VALUE;
