@@ -142,7 +142,7 @@ public class OfflineStartingBookGenerator implements Runnable {
 
         }
 
-        System.out.println("Tree built in " + (System.currentTimeMillis() - startTime) + "ms");
+        System.out.println("AI FIRST tree built in " + (System.currentTimeMillis() - startTime) + "ms");
         System.out.println("dun");
 
         HashMap<Integer, Integer> currentlyBestSecondMoves = new HashMap<>();
@@ -190,7 +190,7 @@ public class OfflineStartingBookGenerator implements Runnable {
                 } else {
                     bestFirstMove = firstMove - 4;
                 }
-                currentlyBestSecondMoves = new HashMap<>(bestSecondMoves); // Might need a clone (?)
+                currentlyBestSecondMoves = new HashMap<>(bestSecondMoves);
             }
             bestSecondMoves.clear();
 
@@ -201,7 +201,7 @@ public class OfflineStartingBookGenerator implements Runnable {
         book.add(currentlyBestSecondMoves);
 
 
-        book.saveToFile();
+//        book.saveToFile();
 
 //        TreeNode lastNode = tree.getRoot();
 //
@@ -304,6 +304,104 @@ public class OfflineStartingBookGenerator implements Runnable {
 //
 //        }
 
+
+        // AI is player 2
+
+        startTime = System.currentTimeMillis();
+
+        tree = new MinimaxTree();
+        lastNode = tree.getRoot();
+
+        for (int firstMove = 1; firstMove <= 10; firstMove++) {
+
+            GameState initialGame = new GameState();
+
+            if(firstMove < 6) {
+                initialGame.makeMove(1);
+                initialGame.makeMove(firstMove + 1);
+            } else {
+                initialGame.makeMove(firstMove - 4);
+            }
+
+            if (firstMove == 1) {
+                lastNode.setFirstChild(new TreeNode(-1));
+                lastNode = lastNode.getFirstChild();
+            } else {
+                lastNode.setNextSibling(new TreeNode(-1));
+                lastNode = lastNode.getNextSibling();
+            }
+
+            lastNode.setScore(initialGame.getHash());
+
+            buildAiSecondTree(lastNode, initialGame, false, 2);
+
+        }
+
+        System.out.println("AI SECOND tree built in " + (System.currentTimeMillis() - startTime) + "ms");
+        System.out.println("dun");
+
+        TreeNode opponentFirstNode = tree.getRoot().getFirstChild();
+
+        for (int opponentFirstMove = 1; opponentFirstMove <= 10; opponentFirstMove++) {
+            currentlyBestSecondMoves = new HashMap<>();
+
+            TreeNode ourFirstNode = opponentFirstNode.getFirstChild();
+
+            bestWorstScore = Integer.MIN_VALUE;
+            bestFirstMove = -1;
+
+            for (int firstMove = 0; firstMove < 6; firstMove++) {
+                TreeNode opponentNode = ourFirstNode.getFirstChild();
+
+                int worstScore = Integer.MAX_VALUE;
+
+                HashMap<Integer, Integer> bestSecondMoves = new HashMap<>();
+
+                for (int opponentsMove = 0; opponentsMove < 6; opponentsMove++) {
+                    TreeNode ourSecondNode = opponentNode.getFirstChild();
+                    int childBestScore = Integer.MIN_VALUE;
+                    TreeNode bestChild = null;
+
+                    for (int secondMove = 0; secondMove < 6; secondMove++) {
+
+                        if (ourSecondNode.getScore() > childBestScore) {
+                            bestChild = ourSecondNode;
+                            childBestScore = ourSecondNode.getScore();
+                        }
+
+                        ourSecondNode = ourSecondNode.getNextSibling();
+                    }
+
+                    if (childBestScore < worstScore) {
+                        worstScore = childBestScore;
+                    }
+
+                    bestSecondMoves.put(opponentNode.getScore(), bestChild.getAmbo());
+
+                    opponentNode = opponentNode.getNextSibling();
+                }
+
+                if (bestWorstScore < worstScore) {
+                    bestWorstScore = worstScore;
+                    bestFirstMove = firstMove + 1;
+                    currentlyBestSecondMoves = new HashMap<>(bestSecondMoves);
+                }
+                bestSecondMoves.clear();
+
+                ourFirstNode = ourFirstNode.getNextSibling();
+            }
+
+
+            book.setMove(opponentFirstNode.getScore(), bestFirstMove);
+            book.add(currentlyBestSecondMoves);
+
+            opponentFirstNode = opponentFirstNode.getNextSibling();
+        }
+
+
+
+        book.saveToFile();
+
     }
 
 
@@ -341,6 +439,54 @@ public class OfflineStartingBookGenerator implements Runnable {
 
                 currentNode.setScore(score);
                 currentNode.setAmbo(move);
+
+
+            }
+
+
+        }
+
+    }
+    private void buildAiSecondTree(TreeNode parent, GameState gameState, boolean isOpponentsTurn, int depth) {
+
+        TreeNode currentNode = null;
+
+        for (int move = 1; move <= 6; move++) {
+            GameState newState = gameState.clone();
+
+            if (move == 1) {
+                parent.setFirstChild(new TreeNode((isOpponentsTurn) ? -1 : move));
+                currentNode = parent.getFirstChild();
+            } else {
+                currentNode.setNextSibling(new TreeNode((isOpponentsTurn) ? -1 : move));
+                currentNode = currentNode.getNextSibling();
+            }
+
+            newState.makeMove(move);
+
+            if (isOpponentsTurn) {
+                currentNode.setScore(newState.getHash());
+                buildAiSecondTree(currentNode, newState, false, depth - 1);
+            } else {
+
+                if (depth != 0) {
+
+                    buildAiSecondTree(currentNode, newState, true, depth - 1);
+
+                } else {
+                    game = newState;
+
+                    try {
+                        finishGame();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    int score = game.getScore(1);
+
+                    currentNode.setScore(score);
+                    currentNode.setAmbo(move);
+                }
 
 
             }
