@@ -173,7 +173,7 @@ public class AIClientNoGUI implements Runnable
     public int getMove(GameState currentBoard) {
         //addText(String.valueOf(currentBoard.getHash()));
         // return getMoveWithID(5000, currentBoard);
-        return getMoveWithDF(10, currentBoard);
+        return getMoveWithDF(11, currentBoard);
     }
 
     public int getMoveWithID(long milliSeconds, GameState currentBoard) {

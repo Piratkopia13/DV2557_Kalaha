@@ -27,6 +27,9 @@ public class AIClient implements Runnable
     private boolean running;
     private boolean connected;
 
+    private int movesPlayed = 0;
+    private int extraMove = -1;
+
     /**
      * Creates a new client.
      */
@@ -222,7 +225,41 @@ public class AIClient implements Runnable
     public int getMove(GameState currentBoard) {
         //addText(String.valueOf(currentBoard.getHash()));
         // return getMoveWithID(5000, currentBoard);
-        return getMoveWithDF(10, currentBoard);
+
+        OpeningBook book = new OpeningBook();
+        book.readFromFile();
+        int move = -1;
+
+        if (player == 1) {
+            if (extraMove != -1) {
+
+                move = extraMove;
+                extraMove = -1;
+
+            } else if (movesPlayed < 2) {
+                // Use the book
+
+                System.out.println(new GameState().getHash());
+
+                move = book.getMove(currentBoard.getHash());
+
+                if (movesPlayed == 0) {
+                    extraMove = move - 10;
+                    move = 1;
+                }
+
+                movesPlayed++;
+
+            } else {
+                move = getMoveWithDF(10, currentBoard);
+            }
+        } else {
+            move = getMoveWithDF(10, currentBoard);
+        }
+
+
+
+        return move;
     }
 
     public int getMoveWithID(long milliSeconds, GameState currentBoard) {

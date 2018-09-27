@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLOutput;
+import java.util.HashMap;
 import java.util.Random;
 
 public class OfflineStartingBookGenerator implements Runnable {
@@ -74,50 +75,52 @@ public class OfflineStartingBookGenerator implements Runnable {
         OpeningBook book = new OpeningBook();
 
         // Modify starting state for opening book (opponent starts)
-        for (int firstMove = 1; firstMove <= 10; firstMove++) {
-            int bestSecondMove = Integer.MIN_VALUE;
+//        for (int firstMove = 1; firstMove <= 10; firstMove++) {
+//            int bestSecondMove = Integer.MIN_VALUE;
+//
+//            for (int secondMove = 1; secondMove <= 6; secondMove++) {
+//                int bestFourthMove = Integer.MIN_VALUE;
+//
+//                for (int thirdMove = 1; thirdMove <= 6; thirdMove++) {
+//
+//                    for (int fourthMove = 1; fourthMove <= 6; fourthMove++) {
+//
+//                        if(firstMove < 6) {
+//                            game.makeMove(1);
+//                            game.makeMove(firstMove + 1);
+//                        } else {
+//                            game.makeMove(firstMove - 4);
+//                        }
+//
+//                        // Store hash for second move
+//
+//
+//                        game.makeMove(secondMove);
+//                        game.makeMove(thirdMove);
+//                        game.makeMove(fourthMove);
+//
+//                        // PLAY THE REST OF THE GAME!
+//
+//                        bestFourthMove = Math.max(bestFourthMove, game.getScore(1));
+//                    }
+//
+//                    book.setMove(game.getHash(), bestFourthMove);
+//
+//                }
+//                bestSecondMove = Math.max(bestSecondMove, bestFourthMove);
+//            }
+//        }
 
-            for (int secondMove = 1; secondMove <= 6; secondMove++) {
-                int bestFourthMove = Integer.MIN_VALUE;
-
-                for (int thirdMove = 1; thirdMove <= 6; thirdMove++) {
-
-                    for (int fourthMove = 1; fourthMove <= 6; fourthMove++) {
-
-                        if(firstMove < 6) {
-                            game.makeMove(1);
-                            game.makeMove(firstMove + 1);
-                        } else {
-                            game.makeMove(firstMove - 4);
-                        }
-
-                        // Store hash for second move
-
-
-                        game.makeMove(secondMove);
-                        game.makeMove(thirdMove);
-                        game.makeMove(fourthMove);
-
-                        // PLAY THE REST OF THE GAME!
-
-                        bestFourthMove = Math.max(bestFourthMove, game.getScore(1));
-                    }
-
-                    book.setMove(game.getHash(), bestFourthMove);
-
-                }
-                bestSecondMove = Math.max(bestSecondMove, bestFourthMove);
-            }
-        }
-
+        System.out.println(new GameState().getHash());
 
         // AI is player 1
 
         long startTime = System.currentTimeMillis();
 
         MinimaxTree tree = new MinimaxTree();
+        TreeNode lastNode = tree.getRoot();
 
-        for (int firstMove = 1; firstMove <= 1; firstMove++) {
+        for (int firstMove = 1; firstMove <= 10; firstMove++) {
             GameState initialGame = new GameState();
 
             if(firstMove < 6) {
@@ -127,13 +130,78 @@ public class OfflineStartingBookGenerator implements Runnable {
                 initialGame.makeMove(firstMove - 4);
             }
 
-            buildAiFirstTree(tree.getRoot(), initialGame, true);
+            if (firstMove == 1) {
+                lastNode.setFirstChild(new TreeNode(firstMove));
+                lastNode = lastNode.getFirstChild();
+            } else {
+                lastNode.setNextSibling(new TreeNode(firstMove));
+                lastNode = lastNode.getNextSibling();
+            }
+
+            buildAiFirstTree(lastNode, initialGame, true);
 
         }
 
         System.out.println("Tree built in " + (System.currentTimeMillis() - startTime) + "ms");
         System.out.println("dun");
 
+        HashMap<Integer, Integer> currentlyBestSecondMoves = new HashMap<>();
+
+        TreeNode possibleFirstNode = tree.getRoot().getFirstChild();
+
+        int bestWorstScore = Integer.MIN_VALUE;
+        int bestFirstMove = -1;
+
+        for (int firstMove = 1; firstMove <= 10; firstMove++) {
+            TreeNode opponentNode = possibleFirstNode.getFirstChild();
+
+            int worstScore = Integer.MAX_VALUE;
+
+            HashMap<Integer, Integer> bestSecondMoves = new HashMap<>();
+
+            for (int opponentsMove = 0; opponentsMove < 6; opponentsMove++) {
+                TreeNode possibleSecondNode = opponentNode.getFirstChild();
+                int childBestScore = Integer.MIN_VALUE;
+                TreeNode bestChild = null;
+
+                for (int secondMove = 0; secondMove < 6; secondMove++) {
+
+                    if (possibleSecondNode.getScore() > childBestScore) {
+                        bestChild = possibleSecondNode;
+                        childBestScore = possibleSecondNode.getScore();
+                    }
+
+                    possibleSecondNode = possibleSecondNode.getNextSibling();
+                }
+
+                if (childBestScore < worstScore) {
+                    worstScore = childBestScore;
+                }
+
+                bestSecondMoves.put(opponentNode.getScore(), bestChild.getAmbo());
+
+                opponentNode = opponentNode.getNextSibling();
+            }
+
+            if (bestWorstScore < worstScore) {
+                bestWorstScore = worstScore;
+                if (firstMove < 6) {
+                    bestFirstMove = firstMove + 11;
+                } else {
+                    bestFirstMove = firstMove - 4;
+                }
+                currentlyBestSecondMoves = new HashMap<>(bestSecondMoves); // Might need a clone (?)
+            }
+            bestSecondMoves.clear();
+
+            possibleFirstNode = possibleFirstNode.getNextSibling();
+        }
+
+        book.setMove(new GameState().getHash(), bestFirstMove);
+        book.add(currentlyBestSecondMoves);
+
+
+        book.saveToFile();
 
 //        TreeNode lastNode = tree.getRoot();
 //
@@ -287,8 +355,8 @@ public class OfflineStartingBookGenerator implements Runnable {
         AIClientNoGUI aiClient = new AIClientNoGUI();
         aiClient.start();
 
-        BadClientNoGUI badClient = new BadClientNoGUI();
-        badClient.start();
+        AIClientNoGUI otherClient = new AIClientNoGUI();
+        otherClient.start();
 
         while (game.getWinner() == -1) {
             Thread.sleep(5);

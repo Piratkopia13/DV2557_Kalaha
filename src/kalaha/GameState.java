@@ -1,5 +1,10 @@
 package kalaha;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Represents a game state in the Kalaha board game.
  * 
@@ -498,7 +503,11 @@ public class GameState
     }
 
     public int getHash() {
-        return board.hashCode();
+        List<Integer> list = new ArrayList<>();
+        for (int i : board) {
+            list.add(i);
+        }
+        return list.hashCode();
     }
 
 }
